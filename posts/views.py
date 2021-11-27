@@ -1,9 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import redirect
 from .models import Post
 from .forms import PostCreateForm
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from users.models import User
+from django.contrib import messages
 
 
 class PostListView(ListView):
@@ -64,6 +64,7 @@ class PostDetailView(DetailView):
 class PostCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = PostCreateForm
     template_name = 'posts/post_form.html'
+    redirect_field_name = 'posts-home'
 
     def get_from_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -78,6 +79,10 @@ class PostCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         if self.request.user.is_authority:
             return False
         return True
+
+    def handle_no_permission(self):
+        messages.error(self.request, f'Permission denied!')
+        return redirect('posts-home')
 
 
 class ReplyView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -94,6 +99,10 @@ class ReplyView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return True
         return False
 
+    def handle_no_permission(self):
+        messages.error(self.request, f'Permission denied!')
+        return redirect('posts-home')
+
 
 class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Post
@@ -109,6 +118,10 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return True
         return False
 
+    def handle_no_permission(self):
+        messages.error(self.request, f'Permission denied!')
+        return redirect('posts-home')
+
 
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Post
@@ -119,3 +132,7 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         if self.request.user == post.author:
             return True
         return False
+
+    def handle_no_permission(self):
+        messages.error(self.request, f'Permission denied!')
+        return redirect('posts-home')
