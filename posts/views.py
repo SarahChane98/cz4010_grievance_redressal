@@ -58,6 +58,18 @@ class PostDetailView(DetailView):
             self.object.is_read = True
             self.object.save()
         context = self.get_context_data(object=self.object)
+        if self.object.is_resolved:
+            if self.object.reply_sig is None:
+                messages.warning(request, f'Digital signature not found!')
+            else:
+                user = User.objects.get(username=self.request.user)
+                key = RSA.importKey(user.pub_key)
+                h = SHA256.SHA256Hash(bytes(self.object.content, 'utf-8'))
+                try:
+                    pkcs1_15.new(key).verify(h, self.object.reply_sig)
+                    messages.success(request, f'Signature verified!')
+                except ValueError:
+                    messages.warning(request, f'Invalid signature of authority reply!')
         return self.render_to_response(context)
 
 
