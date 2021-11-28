@@ -11,8 +11,8 @@ The grievance redressal platform is a public platform that allows public members
 3) Check for unread posts in Notifications
    ![image](./images/authority_notification.png)
 4) Check for unresolved posts
-5) ![image](./images/unresolved_post.png)
-6) Reply to a post addressed to you: click on the post title to enter post details and then click reply
+   ![image](./images/unresolved_post.png)
+5) Reply to a post addressed to you: click on the post title to enter post details and then click reply
    ![image](./images/authority_reply1.png)
    ![image](./images/authority_reply2.png)
 
@@ -21,7 +21,7 @@ The grievance redressal platform is a public platform that allows public members
    ![image](./images/regular_register.png)
 2) Login through the Login page
 3) Click on New Post to create a new post. Post your complaint by entering the title, content and choosing the related authority from a dropdown list.
-![image](./images/publicmember_post.png)
+   ![image](./images/publicmember_post.png)
 4) Check authority's reply in the post detail.
 
 ## Data Models
