@@ -13,15 +13,6 @@ class PostListView(ListView):
     ordering = ['-last_modified']
 
 
-class UserPostListView(LoginRequiredMixin, ListView):
-    model = Post
-    template_name = 'posts/user_posts.html'
-    context_object_name = 'posts'
-
-    def get_queryset(self):
-        return Post.objects.filter(author=self.request.user).order_by('-last_modified')
-
-
 class UnreadPostListView(LoginRequiredMixin, ListView):
     model = Post
     template_name = 'posts/unread_posts.html'
@@ -96,40 +87,6 @@ class ReplyView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def test_func(self):
         post = self.get_object()
         if self.request.user == post.related_authority:
-            return True
-        return False
-
-    def handle_no_permission(self):
-        messages.error(self.request, f'Permission denied!')
-        return redirect('posts-home')
-
-
-class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = Post
-    fields = ['title', 'content']
-
-    def form_valid(self, form):
-        form.instance.author = self.request.user
-        return super().form_valid(form)
-
-    def test_func(self):
-        post = self.get_object()
-        if self.request.user == post.author:
-            return True
-        return False
-
-    def handle_no_permission(self):
-        messages.error(self.request, f'Permission denied!')
-        return redirect('posts-home')
-
-
-class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Post
-    success_url = '/'
-
-    def test_func(self):
-        post = self.get_object()
-        if self.request.user == post.author:
             return True
         return False
 

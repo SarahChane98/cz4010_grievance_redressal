@@ -34,7 +34,6 @@
                         <a class="nav-item nav-link" href="{% url 'resolved-posts' %}">Resolved Posts</a>
                     {% else %}
                         <a class="nav-item nav-link" href="{% url 'post-create' %}">New Post</a>
-                        <a class="nav-item nav-link" href="{% url 'user-posts' %}">My Posts</a>
                     {% endif %}
                     <a class="nav-item nav-link" href="{% url 'logout' %}">Logout</a>
                 {% else %}

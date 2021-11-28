@@ -14,10 +14,7 @@
     <p class="article-content">{{ object.content }}</p>
       <div>
 
-    {% if object.author == user %}
-        <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'post-update' object.id %}">Update</a>
-        <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'post-delete' object.id %}">Delete</a>
-    {% elif object.related_authority == user and not object.is_resolved %}
+    {% if object.related_authority == user and not object.is_resolved %}
         <a class="btn btn btn-outline-info btn-sm mt-1 mb-1" href="{% url 'reply-post' object.id %}">Reply</a>
     {% endif %}
     {% if object.is_resolved %}
