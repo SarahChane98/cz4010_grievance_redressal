@@ -13,6 +13,9 @@ class Post(models.Model):
     is_resolved = models.BooleanField(default=False)
     is_read = models.BooleanField(default=False)
     reply_by_authority = models.TextField(blank=True, default='')
+    post_sig = models.TextField()
+    reply_sig = models.TextField()
+    ring_members = models.TextField()
 
     def __str__(self):
         return self.title
