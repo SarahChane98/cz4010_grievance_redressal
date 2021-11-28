@@ -1,13 +1,13 @@
 from django import forms
 from .models import Post
-from users.models import User
 
 
 class PostCreateForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput())
     class Meta:
         model = Post
         fields = ['title', 'content', 'related_authority']
-        exclude = ('author',)
+        # exclude = ('password',)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
