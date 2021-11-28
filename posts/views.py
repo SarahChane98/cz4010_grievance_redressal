@@ -61,14 +61,14 @@ class PostDetailView(DetailView):
             self.object.save()
         context = self.get_context_data(object=self.object)
         if self.object.post_sig is None:
-            messages.warning(request, f'Ring signature not found!')
+            messages.error(request, f'Ring signature not found!')
         else:
             ring_members = [int(i) for i in self.object.ring_members.split(',')]
             ring_sig = self.object.post_sig
             pub_keys = [RSA.import_key(User.objects.filter(id=userid).first().pub_key) for userid in ring_members]
             verification_result = verify(pub_keys, self.object.content, ring_sig)
             if verification_result:
-                messages.success(request, f'Post verified by ring signature!')
+                messages.success(request, f'Post ring signature verified!')
             else:
                 messages.warning(request, f'Invalid ring signature!')
 
@@ -103,29 +103,31 @@ class PostCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         user = User.objects.get(username=self.request.user)
         if user.check_password(password):
             pri_key = user.pri_key
-            post = form.save()
+            post = form.save(commit=False)
             padded_key = pad(bytes(form.cleaned_data.get('password'), 'utf-8'), 16)
             private_key = AES.new(padded_key, AES.MODE_EAX, b'0').decrypt(pri_key)
             key = RSA.importKey(private_key)
 
             # generate ring signature
             user_ids = list(User.objects.values_list('id', flat=True))
-            if len(user_ids) > 10:
-                user_ids = random.sample(10)
+            if len(user_ids) > 5:
+                user_ids = random.sample(user_ids, 5)
                 if user.id not in user_ids:
                     user_ids.append(user.id)
 
-            users = User.objects.filter(id__in=user_ids)
-            print(users)
+            user_ids = sorted(user_ids)
+            print(user_ids)
             keys = []
-            for user in users:
-                print(user)
-                # print(user.pub_key)
-                pub_key = RSA.import_key(user.pub_key)
-                keys.append(pub_key)
+            for user_id in user_ids:
+                if user_id == user.id:
+                    keys.append(key)
+                else:
+                    pub_key = RSA.import_key(User.objects.get(id=user_id).pub_key)
+                    keys.append(pub_key)
 
             author_idx = user_ids.index(user.id)
-            keys[author_idx] = key
+            print(user.id)
+            print(keys[author_idx].d)
             signature = generate_signature(keys, author_idx, post.content)
             user_ids = ','.join([str(i) for i in user_ids])
             post.post_sig = signature
@@ -163,7 +165,7 @@ class ReplyView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         if user.check_password(password):
             pri_key = user.pri_key
             # print(pri_key)
-            post = form.save()
+            post = form.save(commit=False)
             h = SHA256.SHA256Hash(bytes(post.content, 'utf-8'))
             padded_key = pad(bytes(form.cleaned_data.get('password'), 'utf-8'), 16)
             private_key = AES.new(padded_key, AES.MODE_EAX, b'0').decrypt(pri_key)
