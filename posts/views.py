@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 from .models import Post
-from .forms import PostCreateForm
+from .forms import PostCreateForm, PostReplyForm
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
@@ -77,8 +77,14 @@ class PostCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
 
 class ReplyView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = Post
-    fields = ['reply_by_authority']
+    form_class = PostReplyForm
+    template_name = 'posts/post_form.html'
+    redirect_field_name = 'posts-home'
+    # model = Post
+    # fields = ['reply_by_authority']
+
+    def get_queryset(self):
+        return Post.objects.filter(id=self.kwargs.get('pk'))
 
     def form_valid(self, form):
         form.instance.is_resolved = True
