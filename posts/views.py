@@ -11,10 +11,10 @@ from Crypto.Hash import SHA256
 from users.models import User
 from .models import Post
 from .forms import PostCreateForm, PostReplyForm
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
-from ring_sig import generate_signature
+from ring_sig import generate_signature, verify
 
 
 class PostListView(ListView):
@@ -60,6 +60,18 @@ class PostDetailView(DetailView):
             self.object.is_read = True
             self.object.save()
         context = self.get_context_data(object=self.object)
+        if self.object.post_sig is None:
+            messages.warning(request, f'Ring signature not found!')
+        else:
+            ring_members = [int(i) for i in self.object.ring_members.split(',')]
+            ring_sig = self.object.post_sig
+            pub_keys = [RSA.import_key(User.objects.filter(id=userid).first().pub_key) for userid in ring_members]
+            verification_result = verify(pub_keys, self.object.content, ring_sig)
+            if verification_result:
+                messages.success(request, f'Post verified by ring signature!')
+            else:
+                messages.warning(request, f'Invalid ring signature!')
+
         if self.object.is_resolved:
             if self.object.reply_sig is None:
                 messages.error(request, f'Digital signature not found!')
