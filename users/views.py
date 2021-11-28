@@ -1,3 +1,4 @@
+import base64
 import re
 
 from Crypto.PublicKey import RSA
@@ -23,12 +24,11 @@ def register(request):
             random_generator = Random.new().read
             key = RSA.generate(1024, random_generator)  # generate pub and private key
             user = form.save()
-            user.pub_key = key.publickey().exportKey()
+            user.pub_key = key.publickey().exportKey().decode('utf-8')
             padded_key = pad(bytes(form.cleaned_data.get('password1'), 'utf-8'), 16)
-            cipher = AES.new(padded_key, AES.MODE_EAX)
-            user.nonce = cipher.nonce
+            cipher = AES.new(padded_key, AES.MODE_EAX, b'0')
             user.pri_key = cipher.encrypt(key.exportKey())
-            print(AES.new(padded_key, AES.MODE_EAX, user.nonce).decrypt(user.pri_key).decode("utf-8"))
+            # print(AES.new(padded_key, AES.MODE_EAX, user.nonce).decrypt(user.pri_key).decode("utf-8"))
             user.save()
             messages.success(request, f'Account created for {user.username}!')
             return redirect('login')

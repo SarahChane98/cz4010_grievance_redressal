@@ -1,4 +1,13 @@
+import base64
+
+from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
+from Crypto.Signature import pkcs1_15
+from Crypto.Util.Padding import pad
 from django.shortcuts import redirect
+
+from Crypto.Hash import SHA256
+from users.models import User
 from .models import Post
 from .forms import PostCreateForm, PostReplyForm
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -64,7 +73,24 @@ class PostCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.author = self.request.user
-        return super().form_valid(form)
+        password = form.cleaned_data.get('password')
+        user = User.objects.get(username=self.request.user)
+        if user.check_password(password):
+            pri_key = user.pri_key
+            # print(pri_key)
+            post = form.save()
+            h = SHA256.SHA256Hash(bytes(post.content,'utf-8'))
+            padded_key = pad(bytes(form.cleaned_data.get('password'), 'utf-8'), 16)
+            private_key = AES.new(padded_key, AES.MODE_EAX, b'0').decrypt(pri_key)
+            # print(private_key)
+            key = RSA.importKey(private_key)
+            # print(key)
+            post.reply_sig = pkcs1_15.new(key).sign(h)
+            post.save()
+            return super().form_valid(form)
+        else:
+            messages.error(self.request, 'Validation failed, re-enter password!')
+            return redirect('post-create',)
 
     def test_func(self):
         if self.request.user.is_authority:
@@ -88,7 +114,24 @@ class ReplyView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def form_valid(self, form):
         form.instance.is_resolved = True
-        return super().form_valid(form)
+        password = form.cleaned_data.get('password')
+        user = User.objects.get(username=self.request.user)
+        if user.check_password(password):
+            pri_key = user.pri_key
+            # print(pri_key)
+            post = form.save()
+            h = SHA256.SHA256Hash(bytes(post.content, 'utf-8'))
+            padded_key = pad(bytes(form.cleaned_data.get('password'), 'utf-8'), 16)
+            private_key = AES.new(padded_key, AES.MODE_EAX, b'0').decrypt(pri_key)
+            # print(private_key)
+            key = RSA.importKey(private_key)
+            # print(key)
+            post.reply_sig = pkcs1_15.new(key).sign(h)
+            post.save()
+            return super().form_valid(form)
+        else:
+            messages.error(self.request, 'Validation failed, re-enter password!')
+            return redirect('reply-post', pk=self.kwargs.get('pk'))
 
     def test_func(self):
         post = self.get_object()

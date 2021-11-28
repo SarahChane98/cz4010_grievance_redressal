@@ -20,7 +20,6 @@ class PostReplyForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ['reply_by_authority']
-        # exclude = ('password',)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
