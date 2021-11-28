@@ -62,9 +62,9 @@ class PostDetailView(DetailView):
         context = self.get_context_data(object=self.object)
         if self.object.is_resolved:
             if self.object.reply_sig is None:
-                messages.warning(request, f'Digital signature not found!')
+                messages.error(request, f'Digital signature not found!')
             else:
-                user = User.objects.get(username=self.request.user)
+                user = User.objects.get(username=self.object.related_authority)
                 key = RSA.importKey(user.pub_key)
                 h = SHA256.SHA256Hash(bytes(self.object.content, 'utf-8'))
                 try:
@@ -104,8 +104,11 @@ class PostCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                     user_ids.append(user.id)
 
             users = User.objects.filter(id__in=user_ids)
+            print(users)
             keys = []
             for user in users:
+                print(user)
+                # print(user.pub_key)
                 pub_key = RSA.import_key(user.pub_key)
                 keys.append(pub_key)
 
