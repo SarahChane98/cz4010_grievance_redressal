@@ -69,7 +69,7 @@ class PostDetailView(DetailView):
                 h = SHA256.SHA256Hash(bytes(self.object.content, 'utf-8'))
                 try:
                     pkcs1_15.new(key).verify(h, self.object.reply_sig)
-                    messages.success(request, f'Signature verified!')
+                    messages.success(request, f'Reply signature verified!')
                 except ValueError:
                     messages.warning(request, f'Invalid signature of authority reply!')
         return self.render_to_response(context)
