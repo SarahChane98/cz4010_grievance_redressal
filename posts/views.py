@@ -4,6 +4,7 @@ from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Util.Padding import pad
+from Crypto.Random import random
 from django.shortcuts import redirect
 
 from Crypto.Hash import SHA256
@@ -13,6 +14,7 @@ from .forms import PostCreateForm, PostReplyForm
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
+from ring_sig import generate_signature
 
 
 class PostListView(ListView):
@@ -77,15 +79,30 @@ class PostCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         user = User.objects.get(username=self.request.user)
         if user.check_password(password):
             pri_key = user.pri_key
-            # print(pri_key)
             post = form.save()
-            h = SHA256.SHA256Hash(bytes(post.content,'utf-8'))
             padded_key = pad(bytes(form.cleaned_data.get('password'), 'utf-8'), 16)
             private_key = AES.new(padded_key, AES.MODE_EAX, b'0').decrypt(pri_key)
-            # print(private_key)
             key = RSA.importKey(private_key)
-            # print(key)
-            post.reply_sig = pkcs1_15.new(key).sign(h)
+
+            # generate ring signature
+            user_ids = list(User.objects.values_list('id', flat=True))
+            if len(user_ids) > 10:
+                user_ids = random.sample(10)
+                if user.id not in user_ids:
+                    user_ids.append(user.id)
+
+            users = User.objects.filter(id__in=user_ids)
+            keys = []
+            for user in users:
+                pub_key = RSA.import_key(user.pub_key)
+                keys.append(pub_key)
+
+            author_idx = user_ids.index(user.id)
+            keys[author_idx] = key
+            signature = generate_signature(keys, author_idx, post.content)
+            user_ids = ','.join([str(i) for i in user_ids])
+            post.post_sig = signature
+            post.ring_members = user_ids
             post.save()
             return super().form_valid(form)
         else:

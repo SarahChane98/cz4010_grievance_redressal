@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'posts.apps.PostsConfig',
     'users.apps.UsersConfig',
     'crispy_forms',
+    'ring_sig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
